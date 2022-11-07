@@ -13,6 +13,7 @@ import (
 // CommandBuild is used to compile proto files
 // proto-gen-doc build -o ../doc ../proto
 func CommandBuild() *cobra.Command {
+	var clean bool
 	var output string
 
 	cmd := &cobra.Command{
@@ -20,9 +21,15 @@ func CommandBuild() *cobra.Command {
 		Short: "build doc for google protobuf file.",
 		Args:  cobra.ExactArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
+			if clean {
+				err := os.RemoveAll(output)
+				if err != nil {
+					fmt.Fprintf(os.Stderr, "remove output dir failure, output dir: %s, err: %+v\n", output, err)
+				}	
+			}
 			_, err := ExecuteCommand(args[0], output)
 			if err != nil {
-				_, _ = fmt.Fprintf(os.Stderr, "execute %s args:%v error:%v\n", cmd.Name(), args, err)
+				_, _ = fmt.Fprintf(os.Stderr, "execute %s args: %v error: %v\n", cmd.Name(), args, err)
 				os.Exit(1)
 			}
 
@@ -31,6 +38,7 @@ func CommandBuild() *cobra.Command {
 	}
 
 	flags := cmd.PersistentFlags()
+	flags.BoolVarP(&clean, "clean", "c", clean, "clean output dir")
 	flags.StringVarP(&output, "output", "o", output, "output dir")
 	return cmd
 }

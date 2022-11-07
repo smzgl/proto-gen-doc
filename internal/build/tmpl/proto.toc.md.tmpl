@@ -1,0 +1,12 @@
+# 协议文档
+
+<a id="toc"></a>
+## 目录
+{{- range .Packages}}
+- {{.Name}}
+{{- range .Services}}
+  - [{{.Name}}](./{{.File.Dir}}/proto.md) <!-- (./{{.File.Dir}}/proto.md#{{.FullName | anchor}}) -->
+{{- end}} <!-- end services -->
+{{- end}} <!-- end Packages -->
+- 错误码
+  - [{{.ErrFile.Package}}](./{{.ErrFile.Dir}}/proto.md)

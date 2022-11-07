@@ -1,0 +1,78 @@
+# 协议文档
+
+<a id="toc"></a>
+## 1. 目录 <span align="right"></span>
+{{- range .Services}}
+  - [{{.FullName}}](#{{.FullName | anchor}})
+{{- end}} <!-- end services -->
+
+<a id="services"></a>
+## 2. 服务 <span align="right">[TOP](#toc)</span>
+
+{{- range $idx, $_ := .Services}}
+<a id="{{.FullName | anchor}}"></a>
+### 2.{{$idx | inc}}. {{.FullName}} <span align="right">[TOP](#toc)</span>
+{{nobr .Description}}
+
+| 方法名       | 请求类型       | 应答类型       | 描述         |
+| ----------- | ------------ | ------------- | ------------|
+{{range .Methods -}}
+  | {{.Name}} | [{{.RequestLongType}}](#{{.RequestFullType | anchor}}){{if .RequestStreaming}} stream{{end}} | [{{.ResponseLongType}}](#{{.ResponseFullType | anchor}}){{if .ResponseStreaming}} stream{{end}} | {{nobr .Description}} |
+{{end}}
+{{end}} <!-- end services -->
+
+<a id="messages"></a>
+## 3. 消息 <span align="right">[TOP](#toc)</span>
+
+{{- range $idx, $_ := .Messages}}
+{{if not .Ismapentry}}
+<a id="{{.FullName | anchor}}"></a>
+### 3.{{$idx | inc}}. {{.LongName}} <span align="right">[TOP](#toc)</span>
+{{nobr .Description}}
+
+{{if .HasFields}}
+| 字段 {{len .Fields}}  | 类型  | 标签   | 描述         |
+| ----- | ----  | ----- | ----------- |
+{{range .Fields -}}
+{{- if .Ismap -}}
+  | {{.Name}} | map<[{{.KeyLongType}}](#{{.KeyFullType | anchor}}), [{{.LongType}}](#{{.FullType | anchor}})\> | {{.Label}} | {{if (index .Options "deprecated"|default false)}}**Deprecated.** {{end}}{{nobr .Description}}{{if .DefaultValue}} Default: {{.DefaultValue}}{{end}} |
+{{- else if .Isarray -}}
+  | {{.Name}} | \[\] [{{.LongType}}](#{{.FullType | anchor}}) | {{.Label}} | {{if (index .Options "deprecated"|default false)}}**Deprecated.** {{end}}{{nobr .Description}}{{if .DefaultValue}} Default: {{.DefaultValue}}{{end}} |
+{{- else -}}
+  | {{.Name}} | [{{.LongType}}](#{{.FullType | anchor}}) | {{.Label}} | {{if (index .Options "deprecated"|default false)}}**Deprecated.** {{end}}{{nobr .Description}}{{if .DefaultValue}} Default: {{.DefaultValue}}{{end}} |
+{{- end}}
+{{end}} <!-- end range .Fields -->
+
+<details>
+<summary><span style="font-size: medium; color: #FFA500; "> 完整版JSON </span></summary>
+<pre><code class="language-json">{{.JSONString -1 | raw}}</code></pre>
+</details>
+
+<details>
+<summary><span style="font-size: medium; color: #FFA500; "> 精简版JSON </span></summary>
+</details>
+
+```json
+{{.JSONString 2 | raw}}
+```
+
+{{end}} <!-- end if .HasFields -->
+{{end}} <!-- end if not .Ismapentry -->
+{{end}} <!-- end messages -->
+
+
+<a id="enums"></a>
+## 4. 枚举 <span align="right">[TOP](#toc)</span>
+
+{{- range $idx, $_ := .Enums}}
+<a id="{{.FullName | anchor}}"></a>
+### 4.{{$idx | inc}}. {{.LongName}} <span align="right">[枚举](#enums)</span>
+{{nobr .Description}}
+
+| 名称  | 数值    | 描述        |
+| ---- | ------ | ----------- |
+{{range .Values -}}
+  | {{.Name}} | {{.Number}} | {{nobr .Description}} |
+{{end}}
+
+{{end}} <!-- end enums -->

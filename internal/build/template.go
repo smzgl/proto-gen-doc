@@ -95,7 +95,9 @@ func (tmpl *Template) buildMessagesJsonString() {
 
 	for _, file := range tmpl.Files {
 		for _, message := range file.Messages {
-			o, err := tmpl.fromMessage(objects, message)
+			visited := make(map[string]int)
+
+			o, err := tmpl.fromMessage(objects, message, visited)
 			if err != nil {
 				log.Printf("encode msg to json failure, error: %v", err)
 				continue
@@ -127,11 +129,20 @@ func (tmpl *Template) fromScalarValue(value *ScalarValue) (interface{}, error) {
 	}
 }
 
-func (tmpl *Template) fromMessage(objects map[string]Object, value *Message) (interface{}, error) {
+func (tmpl *Template) fromMessage(objects map[string]Object, value *Message, visited map[string]int) (interface{}, error) {
+	if _, ok := visited[value.FullName]; ok {
+		return map[string]interface{}{}, nil
+	}
+
+	visited[value.FullName] = 1
+	defer func() {
+		delete(visited, value.FullName)
+	}()
+
 	res := make(map[string]interface{})
 
 	for _, f := range value.Fields {
-		v, err := tmpl.fromObjectName(objects, f.FullType)
+		v, err := tmpl.fromObjectName(objects, f.FullType, visited)
 		if err != nil {
 			return nil, err
 		}
@@ -141,7 +152,7 @@ func (tmpl *Template) fromMessage(objects map[string]Object, value *Message) (in
 			res[f.Name] = []interface{}{v}
 
 		case f.Ismap:
-			_, err := tmpl.fromObjectName(objects, f.KeyFullType)
+			_, err := tmpl.fromObjectName(objects, f.KeyFullType, visited)
 			if err != nil {
 				return nil, fmt.Errorf("map key except scalar type, but %s", f.KeyFullType)
 			}
@@ -151,10 +162,11 @@ func (tmpl *Template) fromMessage(objects map[string]Object, value *Message) (in
 			res[f.Name] = v
 		}
 	}
+
 	return res, nil
 }
 
-func (tmpl *Template) fromObjectName(objects map[string]Object, objectName string) (interface{}, error) {
+func (tmpl *Template) fromObjectName(objects map[string]Object, objectName string, visited map[string]int) (interface{}, error) {
 	var err error
 
 	obj, ok := objects[objectName]
@@ -170,7 +182,7 @@ func (tmpl *Template) fromObjectName(objects map[string]Object, objectName strin
 	case obj.Enum != nil:
 		obj.JSONObject, err = tmpl.fromEnum(obj.Enum)
 	case obj.Message != nil:
-		obj.JSONObject, err = tmpl.fromMessage(objects, obj.Message)
+		obj.JSONObject, err = tmpl.fromMessage(objects, obj.Message, visited)
 	case obj.ScalarValue != nil:
 		obj.JSONObject, err = tmpl.fromScalarValue(obj.ScalarValue)
 	default:
